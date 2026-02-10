@@ -14,7 +14,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #8B4513 0%, #D2691E 50%, #CD853F 100%);
+            background: linear-gradient(135deg, #E31E24 0%, #9B4F96 50%, #0066B3 100%);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -51,10 +51,11 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: linear-gradient(135deg, #8B4513 0%, #D2691E 50%, #CD853F 100%);
+            background: linear-gradient(135deg, #E31E24 0%, #9B4F96 50%, #0066B3 100%);
             color: white;
-            padding: 40px;
+            padding: 30px 40px 60px 40px;
             text-align: center;
+            overflow-y: auto;
         }
 
         .hidden {
@@ -84,7 +85,7 @@
 
         button {
             background: white;
-            color: #8B4513;
+            color: #E31E24;
             border: none;
             padding: 18px 45px;
             font-size: 1.4em;
@@ -92,13 +93,14 @@
             cursor: pointer;
             transition: all 0.3s;
             font-weight: bold;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
             margin: 10px;
         }
 
         button:hover {
             transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+            background: #f8f8f8;
         }
 
         button:active {
@@ -113,8 +115,8 @@
         }
 
         .icon {
-            font-size: 3.5em;
-            margin-bottom: 15px;
+            font-size: 3em;
+            margin-bottom: 10px;
         }
 
         #score {
@@ -129,8 +131,8 @@
         }
 
         #finalScore {
-            font-size: 2.5em;
-            margin: 25px 0;
+            font-size: 2.2em;
+            margin: 20px 0;
             color: #FFD700;
         }
 
@@ -213,9 +215,15 @@
         <!-- Game Over Screen -->
         <div id="gameOverScreen" class="screen hidden">
             <div class="icon">🏆</div>
-            <h1>Gut gelaufen!</h1>
-            <div id="finalScore">Punkte: 0</div>
-            <p class="subtitle">Du hast Bamberg erkundet!</p>
+            <h1 style="margin-bottom: 10px;">Gut gelaufen!</h1>
+            <div id="finalScore" style="margin-bottom: 15px;">Punkte: 0</div>
+            <div id="highscoresDisplay" style="margin: 10px 0 15px 0; padding: 15px; background: rgba(255,255,255,0.2); border-radius: 15px; min-width: 300px; max-width: 400px;">
+                <h3 style="margin-bottom: 10px; font-size: 1.2em;">🏅 Top 3 Highscores</h3>
+                <div id="highscoresList" style="font-size: 1em; line-height: 1.8;">
+                    <!-- Wird dynamisch befüllt -->
+                </div>
+            </div>
+            <p class="subtitle" style="margin-bottom: 15px;">Du hast Bamberg erkundet!</p>
             <button onclick="restartGame()">Nochmal spielen</button>
         </div>
 
@@ -224,11 +232,11 @@
 
         <!-- Touch Controls -->
         <div id="controls" class="controls hidden">
-            <button class="control-btn" ontouchstart="handleShoot(event)" onclick="handleShoot(event)" style="background: #FFD700; color: #8B4513;">
+            <button class="control-btn" ontouchstart="handleShoot(event)" onclick="handleShoot(event)" style="background: #FFD700; color: #E31E24;">
                 <span>🥐</span>
                 <span class="control-label">SCHIE&szlig;EN</span>
             </button>
-            <button class="control-btn" ontouchstart="handleJump(event)" onclick="handleJump(event)" style="background: white; color: #8B4513;">
+            <button class="control-btn" ontouchstart="handleJump(event)" onclick="handleJump(event)" style="background: white; color: #0066B3;">
                 <span>⬆️</span>
                 <span class="control-label">SPRINGEN</span>
             </button>
@@ -246,9 +254,56 @@
 
         let gameRunning = false;
         let score = 0;
+        let highscores = [];
         let gameSpeed = 3;
         let gravity = 0.55;
         let jumpStrength = -11.5;
+
+        // Highscore Management
+        function loadHighscores() {
+            const saved = localStorage.getItem('bambergGameHighscores');
+            if (saved) {
+                try {
+                    highscores = JSON.parse(saved);
+                } catch (e) {
+                    highscores = [];
+                }
+            } else {
+                highscores = [];
+            }
+        }
+
+        function saveHighscores() {
+            localStorage.setItem('bambergGameHighscores', JSON.stringify(highscores));
+        }
+
+        function addHighscore(newScore) {
+            highscores.push(newScore);
+            highscores.sort((a, b) => b - a); // Sortiere absteigend
+            highscores = highscores.slice(0, 3); // Behalte nur Top 3
+            saveHighscores();
+        }
+
+        function displayHighscores() {
+            const highscoresList = document.getElementById('highscoresList');
+            if (highscores.length === 0) {
+                highscoresList.innerHTML = '<div style="opacity: 0.7;">Noch keine Highscores</div>';
+                return;
+            }
+
+            const medals = ['🥇', '🥈', '🥉'];
+            let html = '';
+            highscores.forEach((score, index) => {
+                html += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 5px 0;">
+                    <span>${medals[index]} Platz ${index + 1}</span>
+                    <span style="font-weight: bold; font-size: 1.2em;">${score} Punkte</span>
+                </div>`;
+            });
+            highscoresList.innerHTML = html;
+        }
+
+        // Lade Highscores beim Start
+        loadHighscores();
 
         // Player (Bamberger Reiter)
         const player = {
@@ -298,10 +353,10 @@
         // Bamberg landmarks (background)
         let landmarks = [];
         let landmarkTypes = [
-            { name: 'Dom', emoji: '⛪', width: 100, height: 180, color: '#8B7355' },
-            { name: 'Rathaus', emoji: '🏛️', width: 90, height: 140, color: '#DEB887' },
-            { name: 'Altenburg', emoji: '🏰', width: 85, height: 160, color: '#A0826D' },
-            { name: 'Fachwerk', emoji: '🏘️', width: 80, height: 130, color: '#CD853F' }
+            { name: 'Fachwerk1', emoji: '🏘️', width: 70, height: 110, color: '#D2691E', roofColor: '#8B4513' },
+            { name: 'Fachwerk2', emoji: '🏘️', width: 65, height: 100, color: '#CD853F', roofColor: '#654321' },
+            { name: 'Fachwerk3', emoji: '🏘️', width: 75, height: 120, color: '#DEB887', roofColor: '#8B4513' },
+            { name: 'Fachwerk4', emoji: '🏘️', width: 68, height: 105, color: '#F4A460', roofColor: '#A0522D' }
         ];
 
         // Clouds
@@ -320,7 +375,8 @@
                     type: type,
                     width: type.width,
                     height: type.height,
-                    color: type.color
+                    color: type.color,
+                    roofColor: type.roofColor
                 });
             }
         }
@@ -556,6 +612,7 @@
                     landmark.width = type.width;
                     landmark.height = type.height;
                     landmark.color = type.color;
+                    landmark.roofColor = type.roofColor;
                 }
             });
         }
@@ -650,16 +707,33 @@
             gameRunning = false;
             scoreDisplay.classList.add('hidden');
             controls.classList.add('hidden');
+            
+            // Prüfe ob es ein neuer Highscore ist
+            let isNewHighscore = false;
+            if (score > 0) {
+                if (highscores.length < 3 || score > highscores[highscores.length - 1]) {
+                    isNewHighscore = true;
+                }
+                addHighscore(score);
+            }
+            
             finalScoreDisplay.textContent = `Punkte: ${score}`;
+            
+            // Zeige "Neuer Highscore!" wenn zutreffend
+            if (isNewHighscore && score > 0) {
+                finalScoreDisplay.innerHTML = `Punkte: ${score}<br><span style="font-size: 0.6em; color: #FFD700;">⭐ Neuer Highscore! ⭐</span>`;
+            }
+            
+            displayHighscores();
             gameOverScreen.classList.remove('hidden');
         }
 
         function drawBackground() {
-            // Sky gradient (Bamberg Himmel)
+            // Sky gradient (Smart City Bamberg Design: Rot zu Blau)
             const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height - ground.height);
-            gradient.addColorStop(0, '#87CEEB');
-            gradient.addColorStop(0.7, '#B0C4DE');
-            gradient.addColorStop(1, '#D3D3D3');
+            gradient.addColorStop(0, '#E31E24'); // Smart City Rot
+            gradient.addColorStop(0.5, '#9B4F96'); // Übergang Lila
+            gradient.addColorStop(1, '#0066B3'); // Smart City Blau
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height - ground.height);
         }
@@ -677,58 +751,123 @@
 
         function drawLandmarks() {
             landmarks.forEach(landmark => {
-                // Gebäude/Wahrzeichen
+                const baseY = canvas.height - ground.height - landmark.height;
+                
+                // Fachwerkhaus - Hauptgebäude
                 ctx.fillStyle = landmark.color;
                 ctx.fillRect(
                     landmark.x,
-                    canvas.height - ground.height - landmark.height,
+                    baseY,
                     landmark.width,
                     landmark.height
                 );
 
-                // Details je nach Typ
-                if (landmark.type.name === 'Dom') {
-                    // Dom-Türme
-                    ctx.fillStyle = '#6B5644';
-                    ctx.fillRect(landmark.x + 10, canvas.height - ground.height - landmark.height - 20, 15, 25);
-                    ctx.fillRect(landmark.x + 75, canvas.height - ground.height - landmark.height - 20, 15, 25);
-                    
-                    // Spitzen
+                // Dach (Satteldach - typisch fränkisch)
+                ctx.fillStyle = landmark.roofColor;
+                ctx.beginPath();
+                ctx.moveTo(landmark.x - 5, baseY);
+                ctx.lineTo(landmark.x + landmark.width / 2, baseY - 25);
+                ctx.lineTo(landmark.x + landmark.width + 5, baseY);
+                ctx.closePath();
+                ctx.fill();
+
+                // Fachwerk-Balken (horizontale Balken)
+                ctx.strokeStyle = '#4A2511';
+                ctx.lineWidth = 3;
+                
+                // Horizontale Balken
+                for (let i = 1; i < 4; i++) {
+                    const y = baseY + (landmark.height / 4) * i;
                     ctx.beginPath();
-                    ctx.moveTo(landmark.x + 17.5, canvas.height - ground.height - landmark.height - 20);
-                    ctx.lineTo(landmark.x + 10, canvas.height - ground.height - landmark.height - 15);
-                    ctx.lineTo(landmark.x + 25, canvas.height - ground.height - landmark.height - 15);
-                    ctx.fill();
-                    
-                    ctx.beginPath();
-                    ctx.moveTo(landmark.x + 82.5, canvas.height - ground.height - landmark.height - 20);
-                    ctx.lineTo(landmark.x + 75, canvas.height - ground.height - landmark.height - 15);
-                    ctx.lineTo(landmark.x + 90, canvas.height - ground.height - landmark.height - 15);
-                    ctx.fill();
+                    ctx.moveTo(landmark.x, y);
+                    ctx.lineTo(landmark.x + landmark.width, y);
+                    ctx.stroke();
                 }
 
-                // Fenster
-                ctx.fillStyle = 'rgba(255, 255, 200, 0.6)';
-                for (let i = 0; i < 3; i++) {
-                    for (let j = 0; j < Math.floor(landmark.height / 35); j++) {
-                        if (Math.random() > 0.25) {
-                            ctx.fillRect(
-                                landmark.x + 15 + i * 25,
-                                canvas.height - ground.height - landmark.height + 15 + j * 30,
-                                12,
-                                18
-                            );
-                        }
+                // Vertikale Balken
+                ctx.lineWidth = 2.5;
+                const numVertical = 3;
+                for (let i = 1; i <= numVertical; i++) {
+                    const x = landmark.x + (landmark.width / (numVertical + 1)) * i;
+                    ctx.beginPath();
+                    ctx.moveTo(x, baseY);
+                    ctx.lineTo(x, baseY + landmark.height);
+                    ctx.stroke();
+                }
+
+                // Diagonale Streben (typisch für Fachwerk)
+                ctx.lineWidth = 2;
+                for (let i = 0; i < 2; i++) {
+                    const startX = landmark.x + (landmark.width / 3) * i + 10;
+                    const startY = baseY + landmark.height / 3;
+                    const endX = startX + 15;
+                    const endY = startY + landmark.height / 3;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(startX, startY);
+                    ctx.lineTo(endX, endY);
+                    ctx.stroke();
+                    
+                    // Gegenrichtung
+                    ctx.beginPath();
+                    ctx.moveTo(endX, startY);
+                    ctx.lineTo(startX, endY);
+                    ctx.stroke();
+                }
+
+                // Fenster (kleine Sprossenfenster)
+                ctx.fillStyle = 'rgba(255, 255, 220, 0.7)';
+                const windowWidth = 12;
+                const windowHeight = 15;
+                const windowsPerRow = 2;
+                const windowRows = 2;
+                
+                for (let row = 0; row < windowRows; row++) {
+                    for (let col = 0; col < windowsPerRow; col++) {
+                        const windowX = landmark.x + 15 + col * 25;
+                        const windowY = baseY + 20 + row * 35;
+                        
+                        // Fenster
+                        ctx.fillRect(windowX, windowY, windowWidth, windowHeight);
+                        
+                        // Fensterkreuz (Sprosse)
+                        ctx.strokeStyle = '#4A2511';
+                        ctx.lineWidth = 1.5;
+                        ctx.beginPath();
+                        ctx.moveTo(windowX + windowWidth / 2, windowY);
+                        ctx.lineTo(windowX + windowWidth / 2, windowY + windowHeight);
+                        ctx.stroke();
+                        ctx.beginPath();
+                        ctx.moveTo(windowX, windowY + windowHeight / 2);
+                        ctx.lineTo(windowX + windowWidth, windowY + windowHeight / 2);
+                        ctx.stroke();
                     }
                 }
 
-                // Emoji-Label für Wahrzeichen
-                ctx.font = '28px Arial';
-                ctx.fillText(
-                    landmark.type.emoji,
-                    landmark.x + landmark.width / 2 - 14,
-                    canvas.height - ground.height - landmark.height - 10
-                );
+                // Tür (Holztür)
+                const doorWidth = 18;
+                const doorHeight = 30;
+                const doorX = landmark.x + landmark.width / 2 - doorWidth / 2;
+                const doorY = baseY + landmark.height - doorHeight;
+                
+                ctx.fillStyle = '#654321';
+                ctx.fillRect(doorX, doorY, doorWidth, doorHeight);
+                
+                // Türgriff
+                ctx.fillStyle = '#FFD700';
+                ctx.beginPath();
+                ctx.arc(doorX + doorWidth - 4, doorY + doorHeight / 2, 2, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Dachziegel-Textur
+                ctx.strokeStyle = landmark.roofColor;
+                ctx.lineWidth = 1;
+                for (let i = 0; i < 8; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(landmark.x, baseY - 5 - i * 3);
+                    ctx.lineTo(landmark.x + landmark.width, baseY - 5 - i * 3);
+                    ctx.stroke();
+                }
             });
         }
 
@@ -754,21 +893,6 @@
             // Ufer-Linie
             ctx.fillStyle = '#8B7355';
             ctx.fillRect(0, canvas.height - ground.height - 3, canvas.width, 3);
-
-            // Klein-Venedig Häuser im Hintergrund
-            for (let i = 0; i < 4; i++) {
-                const houseX = i * 150 + (score * 0.3) % 150;
-                if (houseX < canvas.width) {
-                    ctx.fillStyle = i % 2 === 0 ? '#F4A460' : '#DEB887';
-                    ctx.fillRect(houseX, canvas.height - ground.height - 35, 40, 30);
-                    ctx.fillStyle = '#8B4513';
-                    ctx.beginPath();
-                    ctx.moveTo(houseX, canvas.height - ground.height - 35);
-                    ctx.lineTo(houseX + 20, canvas.height - ground.height - 45);
-                    ctx.lineTo(houseX + 40, canvas.height - ground.height - 35);
-                    ctx.fill();
-                }
-            }
         }
 
         function drawPlayer() {
